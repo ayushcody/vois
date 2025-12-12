@@ -1,0 +1,40 @@
+{
+    "name": "ekmat-monorepo",
+    "version": "1.0.0",
+    "description": "EkMat - ZeroKnowledge Blockchain Voting Platform",
+    "private": true,
+    "workspaces": [
+        "contracts",
+        "frontend",
+        "backend"
+    ],
+    "scripts": {
+        "dev:contracts": "npm run dev --workspace=contracts",
+        "dev:frontend": "npm run dev --workspace=frontend",
+        "dev:backend": "npm run dev --workspace=backend",
+        "test": "hardhat test",
+        "chain": "ganache --wallet.seed \"ekmat-dev-seed\" --chain.chainId 1337 --server.port 8545 --miner.blockTime 1",
+        "deploy:ganache": "hardhat run scripts/deploy.ts --network localhost",
+        "build": "npm run build --workspaces",
+        "install:all": "npm install"
+    },
+    "keywords": [
+        "blockchain",
+        "voting",
+        "zk",
+        "hardhat",
+        "react",
+        "typescript"
+    ],
+    "author": "EkMat Team",
+    "license": "MIT",
+    "devDependencies": {
+        "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+        "@types/node": "^20.0.0",
+        "dotenv": "^16.0.0",
+        "ganache": "^7.9.2",
+        "hardhat": "^2.19.0",
+        "ts-node": "^10.0.0",
+        "typescript": "^5.0.0"
+    }
+}
