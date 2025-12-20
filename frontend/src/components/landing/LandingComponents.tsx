@@ -1,47 +1,68 @@
 import { Button } from '../common/Button';
 import { theme } from '../../styles/theme';
-import { Shield, CheckCircle, Database } from 'lucide-react';
+import { Shield, Activity, Database } from 'lucide-react';
 import { Card } from '../common/Card';
 
-export const HeroSection = () => (
-    <section style={{
-        padding: '6rem 2rem',
-        textAlign: 'center',
-        background: `linear-gradient(135deg, ${theme.colors.backgroundAlt} 0%, #FFFFFF 100%)`
-    }}>
-        <h1 style={{ fontSize: theme.typography.h1, color: theme.colors.primaryDark, marginBottom: theme.spacing.md }}>
-            EkMat
-        </h1>
-        <p style={{ fontSize: theme.typography.h3, color: theme.colors.textSecondary, marginBottom: theme.spacing.xl }}>
-            Secure, verifiable and privacy-preserving elections on blockchain.
-        </p>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: theme.spacing.md }}>
-            <Button size="lg" variant="primary">Get Started</Button>
-            <Button size="lg" variant="outline">View Demo</Button>
+interface HeroSectionProps {
+    onGetStarted?: () => void;
+}
+
+export const HeroSection = ({ onGetStarted }: HeroSectionProps) => (
+    <section className="landing-hero">
+        <div className="landing-hero-inner">
+            <div className="landing-hero-badge">
+                <span className="landing-hero-badge-dot" />
+                <span className="landing-hero-badge-text">Mainnet Ready</span>
+            </div>
+
+            <h1 className="landing-hero-title">EkMat</h1>
+            <p className="landing-hero-subtitle">
+                Secure, verifiable and privacy-preserving elections on blockchain.
+            </p>
+
+            <div className="landing-hero-actions">
+                <Button
+                    size="lg"
+                    variant="primary"
+                    style={{
+                        boxShadow: '0 0 0 1px rgba(37, 99, 235, 0.35), 0 18px 45px rgba(37, 99, 235, 0.35)',
+                    }}
+                    onClick={onGetStarted}
+                >
+                    Get Started
+                </Button>
+                <Button
+                    size="lg"
+                    variant="outline"
+                    style={{
+                        borderColor: theme.colors.gray200,
+                        backgroundColor: 'rgba(255,255,255,0.85)',
+                        color: theme.colors.textMuted,
+                    }}
+                >
+                    View Demo Election
+                </Button>
+            </div>
         </div>
     </section>
 );
 
 export const HowItWorksSection = () => (
-    <section style={{ padding: '4rem 2rem', backgroundColor: theme.colors.white }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '3rem', fontSize: theme.typography.h2 }}>How It Works</h2>
-        <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '2rem' }}>
+    <section className="landing-section landing-section-light">
+        <h2 className="landing-section-title">How It Works</h2>
+        <div className="how-it-steps">
             {[
-                { step: 1, title: "Verify ID", desc: "Government issued Identity verification" },
-                { step: 2, title: "Prove Eligibility", desc: "Generate Zero-Knowledge Proof" },
-                { step: 3, title: "Vote Anonymously", desc: "Cast your vote on-chain" },
-                { step: 4, title: "Verify Vote", desc: "Check via Manifest & Merkle Root" }
+                { step: 1, title: 'Verify ID', desc: 'Government issued identity verification' },
+                { step: 2, title: 'Prove Eligibility', desc: 'Generate Zero-Knowledge Proof' },
+                { step: 3, title: 'Vote Anonymously', desc: 'Cast your vote on-chain' },
+                { step: 4, title: 'Verify Vote', desc: 'Check via Manifest & Merkle Root' },
             ].map((item) => (
-                <div key={item.step} style={{ width: '250px', textAlign: 'center' }}>
-                    <div style={{
-                        width: '50px', height: '50px', background: theme.colors.primary, color: 'white',
-                        borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        margin: '0 auto 1rem', fontSize: '1.25rem', fontWeight: 'bold'
-                    }}>
-                        {item.step}
+                <div key={item.step} className="how-it-step">
+                    <div className="how-it-circle">
+                        <span>{item.step}</span>
                     </div>
-                    <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>{item.title}</h3>
-                    <p style={{ color: theme.colors.textSecondary }}>{item.desc}</p>
+                    <h3 className="how-it-title">{item.title}</h3>
+                    <p className="how-it-desc">{item.desc}</p>
                 </div>
             ))}
         </div>
@@ -49,28 +70,43 @@ export const HowItWorksSection = () => (
 );
 
 export const USPsSection = () => (
-    <section style={{ padding: '4rem 2rem', backgroundColor: theme.colors.background }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '3rem', fontSize: theme.typography.h2 }}>Why EkMat?</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-            <Card>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-                    <Shield size={48} color={theme.colors.accent} style={{ marginBottom: '1rem' }} />
-                    <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Privacy First</h3>
-                    <p style={{ color: theme.colors.textSecondary }}>Uses Zero-Knowledge Proofs (zk-SNARKs) to ensure your vote remains anonymous while being verifiable.</p>
+    <section className="landing-section landing-section-muted">
+        <h2 className="landing-section-title">Why EkMat?</h2>
+        <div className="usp-grid">
+            <Card className="usp-card">
+                <div className="usp-card-inner">
+                    <div className="usp-icon">
+                        <Shield size={32} color={theme.colors.primary} />
+                    </div>
+                    <h3 className="usp-title">Privacy First</h3>
+                    <p className="usp-desc">
+                        Uses Zero-Knowledge Proofs (zk-SNARKs) to ensure your vote remains anonymous while being
+                        mathematically verifiable.
+                    </p>
                 </div>
             </Card>
-            <Card>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-                    <CheckCircle size={48} color={theme.colors.success} style={{ marginBottom: '1rem' }} />
-                    <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Auditable</h3>
-                    <p style={{ color: theme.colors.textSecondary }}>Every vote is recorded on the blockchain. Mathematical proofs guarantee the result's integrity.</p>
+            <Card className="usp-card">
+                <div className="usp-card-inner">
+                    <div className="usp-icon">
+                        <Activity size={32} color={theme.colors.primary} />
+                    </div>
+                    <h3 className="usp-title">Auditable End-to-End</h3>
+                    <p className="usp-desc">
+                        Every election artifact is traceable – manifests, tallies and proofs live on-chain or on IPFS for
+                        independent verification.
+                    </p>
                 </div>
             </Card>
-            <Card>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-                    <Database size={48} color={theme.colors.primary} style={{ marginBottom: '1rem' }} />
-                    <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Decentralized</h3>
-                    <p style={{ color: theme.colors.textSecondary }}>Data is stored on IPFS and logic runs on Ethereum. No central authority controls the outcome.</p>
+            <Card className="usp-card">
+                <div className="usp-card-inner">
+                    <div className="usp-icon">
+                        <Database size={32} color={theme.colors.primary} />
+                    </div>
+                    <h3 className="usp-title">Institutional-Grade Infrastructure</h3>
+                    <p className="usp-desc">
+                        Smart contracts and distributed storage handle core vote logic and data, eliminating single points
+                        of failure.
+                    </p>
                 </div>
             </Card>
         </div>
@@ -78,15 +114,12 @@ export const USPsSection = () => (
 );
 
 export const TechStackSection = () => (
-    <section style={{ padding: '4rem 2rem', backgroundColor: theme.colors.white, textAlign: 'center' }}>
-        <h2 style={{ marginBottom: '2rem', fontSize: theme.typography.h3, color: theme.colors.textSecondary }}>Powered By</h2>
-        <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '2rem', fontSize: '1.1rem', fontWeight: 600, color: theme.colors.primaryDark }}>
-            <span>React</span>
-            <span>Solidity</span>
-            <span>Hardhat</span>
-            <span>IPFS/Pinata</span>
+    <section className="landing-section landing-powered-by">
+        <div className="powered-by-label">Powered by</div>
+        <div className="powered-by-items">
+            <span>Ethereum</span>
+            <span>IPFS</span>
             <span>Circom</span>
-            <span>SnarkJS</span>
         </div>
     </section>
 );
