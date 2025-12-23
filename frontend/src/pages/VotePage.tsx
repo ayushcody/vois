@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useProvider } from '../hooks/useProvider';
 import { useContract } from '../hooks/useContract';
 import EkMatVotingArtifact from '../abi/EkMatVoting.json';
@@ -9,7 +9,7 @@ import { Button } from '../components/common/Button';
 import { useToast } from '../components/common/ToastProvider';
 import { theme } from '../styles/theme';
 import { api } from '../lib/api';
-import { Vote, CheckCircle, ExternalLink } from 'lucide-react';
+import { Vote, CheckCircle, ExternalLink, RefreshCw } from 'lucide-react';
 import { ethers } from 'ethers';
 
 // Helper to format short address
@@ -32,8 +32,98 @@ interface Election {
     merkleRoot: string;
 }
 
+interface LiveElectionTallyProps {
+    candidates: Candidate[];
+    loading: boolean;
+    lastBlock: number | null;
+    onRefresh: () => void;
+}
+
+const LiveElectionTally: React.FC<LiveElectionTallyProps> = ({ candidates, loading, lastBlock, onRefresh }) => {
+    const totalVotes = useMemo(
+        () => candidates.reduce((sum, c) => sum + (c.voteCount || 0), 0),
+        [candidates]
+    );
+
+    const getPercentage = (count: number) => {
+        if (!totalVotes) return 0;
+        return Math.round((count / totalVotes) * 100);
+    };
+
+    return (
+        <Card className="tally-card">
+            <div className="tally-header">
+                <div>
+                    <div className="tally-title">Live Election Tally</div>
+                    <div className="tally-subtitle">Updated from on-chain vote counts</div>
+                </div>
+                <div className="tally-live-badge">
+                    <span className="tally-live-dot" />
+                    Live
+                </div>
+            </div>
+
+            <div className="tally-total">
+                <div className="tally-total-label">Total Votes Cast</div>
+                <div className="tally-total-number">
+                    {loading ? '— — —' : totalVotes.toString()}
+                </div>
+            </div>
+
+            <div className="tally-bars">
+                {loading && (
+                    <>
+                        <div className="tally-bar-row skeleton-row" />
+                        <div className="tally-bar-row skeleton-row" />
+                        <div className="tally-bar-row skeleton-row" />
+                    </>
+                )}
+                {!loading && candidates.map((candidate) => {
+                    const pct = getPercentage(candidate.voteCount || 0);
+                    return (
+                        <div key={candidate.id} className="tally-bar-row">
+                            <div className="tally-bar-label">
+                                <span className="tally-bar-name">{candidate.name}</span>
+                                <span className="tally-bar-value">
+                                    {candidate.voteCount.toString().padStart(2, '0')} (
+                                    {pct.toString().padStart(2, '0')}%)
+                                </span>
+                            </div>
+                            <div className="tally-bar-track">
+                                <div
+                                    className="tally-bar-fill"
+                                    style={{ width: `${pct}%` }}
+                                />
+                            </div>
+                        </div>
+                    );
+                })}
+                {!loading && candidates.length === 0 && (
+                    <div className="tally-empty">No tally data available for this election yet.</div>
+                )}
+            </div>
+
+            <div className="tally-footer">
+                <div className="tally-footer-text">
+                    Last Block Checked:{' '}
+                    <span className="tally-footer-block">
+                        {lastBlock !== null ? `#${lastBlock}` : '— — —'}
+                    </span>
+                </div>
+                <button
+                    type="button"
+                    className="tally-refresh-btn"
+                    onClick={onRefresh}
+                >
+                    <RefreshCw size={14} />
+                </button>
+            </div>
+        </Card>
+    );
+};
+
 const VotePage: React.FC = () => {
-    const { account } = useProvider();
+    const { account, provider } = useProvider();
     const contract = useContract(EKMAT_VOTING_ADDRESS, EkMatVotingArtifact.abi);
     const { showToast } = useToast();
 
@@ -42,6 +132,7 @@ const VotePage: React.FC = () => {
     const [candidates, setCandidates] = useState<Candidate[]>([]);
     const [loading, setLoading] = useState(false);
     const [voting, setVoting] = useState(false);
+    const [lastBlock, setLastBlock] = useState<number | null>(null);
 
     // Vote Success State
     const [voteReceipt, setVoteReceipt] = useState<{ txHash: string; ipfsCid: string } | null>(null);
@@ -60,7 +151,7 @@ const VotePage: React.FC = () => {
         try {
             // In a real app we might iterate or have a getElections count
             // For now, let's try fetching election ID 0 and 1
-            const election0 = await contract!.getElection("0").catch(() => null);
+            const election0 = await contract!.getElection(0).catch(() => null);
             if (election0 && election0.name) {
                 setElections([{ ...election0, id: 0 }]); // Simplified
                 setSelectedElectionId(0);
@@ -73,7 +164,7 @@ const VotePage: React.FC = () => {
     const loadCandidates = async (electionId: number) => {
         setLoading(true);
         try {
-            const cands = await contract!.getCandidates(String(electionId));
+            const cands = await contract!.getCandidates(electionId);
             // Map contract struct to local interface
             const formatted = cands.map((c: any, index: number) => ({
                 id: index, // Index in the array is usually the ID for simple arrays
@@ -83,11 +174,22 @@ const VotePage: React.FC = () => {
                 voteCount: Number(c.voteCount)
             }));
             setCandidates(formatted);
+
+            if (provider) {
+                const blockNumber = await provider.getBlockNumber();
+                setLastBlock(blockNumber);
+            }
         } catch (err) {
             console.error(err);
             showToast('Failed to load candidates', 'error');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleRefreshTally = () => {
+        if (selectedElectionId !== null && contract) {
+            loadCandidates(selectedElectionId);
         }
     };
 
@@ -171,9 +273,9 @@ const VotePage: React.FC = () => {
                         <div style={{ background: theme.colors.gray100, padding: '1rem', borderRadius: theme.borderRadius.md, textAlign: 'left', marginBottom: '2rem' }}>
                             <div style={{ marginBottom: '0.5rem' }}>
                                 <strong>TX Hash:</strong>
-                                <span style={{ marginLeft: '10px', color: theme.colors.primary, fontFamily: 'monospace' }}>
-                                    {shortAddr(voteReceipt.txHash)}
-                                </span>
+                                <a href={`https://sepolia.etherscan.io/tx/${voteReceipt.txHash}`} target="_blank" rel="noreferrer" style={{ marginLeft: '10px', color: theme.colors.primary }}>
+                                    {shortAddr(voteReceipt.txHash)} <ExternalLink size={12} />
+                                </a>
                             </div>
                             <div>
                                 <strong>Vote Receipt (IPFS):</strong>
@@ -220,47 +322,54 @@ const VotePage: React.FC = () => {
 
             {selectedElectionId !== null && (
                 <div className="page-section">
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '2rem' }}>
-                        {candidates.map(candidate => (
-                            <Card key={candidate.id} style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                                <div style={{ height: '180px', background: theme.colors.gray100, display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: `1px solid ${theme.colors.gray200}` }}>
-                                    {/* Placeholder or IPFS Image */}
-                                    {candidate.ipfsCid ? (
-                                        <img src={`https://gateway.pinata.cloud/ipfs/${candidate.ipfsCid}`} alt={candidate.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    ) : (
-                                        <Vote size={48} color={theme.colors.gray300} />
-                                    )}
-                                </div>
-                                <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                                    <h3 style={{ marginBottom: '0.25rem', fontSize: '1.15rem' }}>{candidate.name}</h3>
-                                    <p style={{ color: theme.colors.textSecondary, marginBottom: '1rem', fontSize: '0.9rem', fontWeight: 500 }}>{candidate.party}</p>
-
-                                    <div style={{ marginBottom: '1.5rem', flex: 1 }}>
-                                        {/* Profile link - mock for now since we don't have a real profile URL */}
-                                        <a href="#" style={{ fontSize: '0.85rem', color: theme.colors.primary, textDecoration: 'underline' }}>
-                                            View Profile on IPFS
-                                        </a>
+                    <div className="vote-layout">
+                        <div className="vote-candidates-grid">
+                            {candidates.map(candidate => (
+                                <Card key={candidate.id} style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                                    <div style={{ height: '180px', background: theme.colors.gray100, display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: `1px solid ${theme.colors.gray200}` }}>
+                                        {/* Placeholder or IPFS Image */}
+                                        {candidate.ipfsCid ? (
+                                            <img src={`https://gateway.pinata.cloud/ipfs/${candidate.ipfsCid}`} alt={candidate.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        ) : (
+                                            <Vote size={48} color={theme.colors.gray300} />
+                                        )}
                                     </div>
+                                    <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                        <h3 style={{ marginBottom: '0.25rem', fontSize: '1.15rem' }}>{candidate.name}</h3>
+                                        <p style={{ color: theme.colors.textSecondary, marginBottom: '1rem', fontSize: '0.9rem', fontWeight: 500 }}>{candidate.party}</p>
 
-                                    <div style={{ fontSize: '0.85rem', color: theme.colors.gray500, marginBottom: '1rem' }}>
-                                        Current Votes: {candidate.voteCount}
+                                        <div style={{ marginBottom: '1.5rem', flex: 1 }}>
+                                            {/* Profile link - mock for now since we don't have a real profile URL */}
+                                            <a href="#" style={{ fontSize: '0.85rem', color: theme.colors.primary, textDecoration: 'underline' }}>
+                                                View Profile on IPFS
+                                            </a>
+                                        </div>
+
+                                        <div style={{ fontSize: '0.85rem', color: theme.colors.gray500, marginBottom: '1rem' }}>
+                                            Current Votes: {candidate.voteCount}
+                                        </div>
+
+                                        <Button
+                                            fullWidth
+                                            onClick={() => handleCastVote(candidate.id, candidate.name)}
+                                            disabled={voting || !account}
+                                        >
+                                            {voting ? 'Signing...' : (account ? `Confirm vote for ${candidate.name}` : 'Connect Wallet')}
+                                        </Button>
                                     </div>
+                                </Card>
+                            ))}
+                        </div>
 
-                                    <Button
-                                        fullWidth
-                                        onClick={() => handleCastVote(candidate.id, candidate.name)}
-                                        disabled={voting || !account}
-                                    >
-                                        {voting ? 'Signing...' : (account ? `Confirm vote for ${candidate.name}` : 'Connect Wallet')}
-                                    </Button>
-                                </div>
-                            </Card>
-                        ))}
+                        <LiveElectionTally
+                            candidates={candidates}
+                            loading={loading}
+                            lastBlock={lastBlock}
+                            onRefresh={handleRefreshTally}
+                        />
                     </div>
                 </div>
             )}
-
-            {loading && <p style={{ textAlign: 'center', marginTop: '2rem', color: theme.colors.textSecondary }}>Loading candidates...</p>}
         </Layout>
     );
 };

@@ -81,7 +81,19 @@ export const Navbar: React.FC = () => {
           <Link to="/results" style={navLinkStyle}>Results</Link>
           <Link to="/audit" style={navLinkStyle}>Audit</Link>
           <Link to="/admin" style={navLinkStyle}>Admin</Link>
-          <Link to="/profile" style={navLinkStyle}>Profile</Link>
+          <Link
+            to="/support"
+            style={{
+              ...navLinkStyle,
+              padding: '0.35rem 0.9rem',
+              borderRadius: '999px',
+              border: `1px solid ${theme.colors.gray200}`,
+              backgroundColor: theme.colors.gray100,
+              fontSize: '0.85rem',
+            }}
+          >
+            Support
+          </Link>
         </div>
 
         {/* Wallet / status */}
@@ -97,11 +109,9 @@ export const Navbar: React.FC = () => {
           >
             Network: Testnet
           </span>
-          <Link to="/profile">
-            <Button variant={account ? 'secondary' : 'primary'} size="sm">
-              {account ? `${account.substring(0, 6)}...${account.substring(38)}` : 'Connect Wallet'}
-            </Button>
-          </Link>
+          <Button onClick={handleConnect} variant={account ? 'secondary' : 'primary'} size="sm">
+            {account ? `${account.substring(0, 6)}...${account.substring(38)}` : 'Connect Wallet'}
+          </Button>
         </div>
       </div>
     </nav>

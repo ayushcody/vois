@@ -23,34 +23,5 @@ export const useProvider = () => {
         initProvider();
     }, []);
 
-    const connect = async () => {
-        if (window.ethereum) {
-            try {
-                // Request wallet_requestPermissions to force account selection
-                await window.ethereum.request({
-                    method: 'wallet_requestPermissions',
-                    params: [{ eth_accounts: {} }]
-                });
-                
-                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                const browserProvider = new ethers.BrowserProvider(window.ethereum);
-                setProvider(browserProvider);
-                
-                if (accounts.length > 0) {
-                    setAccount(accounts[0]);
-                }
-            } catch (error) {
-                throw error;
-            }
-        } else {
-            throw new Error('No crypto wallet found');
-        }
-    };
-
-    const disconnect = () => {
-        setAccount(null);
-        setProvider(null);
-    };
-
-    return { provider, account, connect, disconnect };
+    return { provider, account };
 };

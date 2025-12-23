@@ -16,7 +16,7 @@ export const pinJSON = async (data: any): Promise<string> => {
         const mockHash = 'Qm' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
         return mockHash;
     }
-    
+
     try {
         const response = await axios.post('https://api.pinata.cloud/pinning/pinJSONToIPFS', data, {
             headers: {
@@ -41,7 +41,7 @@ export const pinFile = async (fileBuffer: Buffer, fileName: string): Promise<str
         const mockHash = 'Qm' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
         return mockHash;
     }
-    
+
     try {
         const data = new FormData();
         data.append('file', fileBuffer, fileName);

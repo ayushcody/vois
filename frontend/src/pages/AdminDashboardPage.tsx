@@ -25,7 +25,7 @@ const AdminDashboardPage: React.FC = () => {
 
     // Forms
     const [newElectionName, setNewElectionName] = useState('');
-    const [targetElectionId, setTargetElectionId] = useState('');
+    const [targetElectionId, setTargetElectionId] = useState(0);
     const [newCandidateName, setNewCandidateName] = useState('');
     const [newCandidateParty, setNewCandidateParty] = useState('');
     const [newCandidateImage, setNewCandidateImage] = useState<File | null>(null);
@@ -47,45 +47,22 @@ const AdminDashboardPage: React.FC = () => {
     }, []);
 
     const fetchElections = async () => {
+        // In a real dApp we'd iterate counters. For now fetch ID 0 and 1
+        const list = [];
         try {
-            const electionIds = await contract!.getElectionIds();
-            const list = [];
-            
-            for (const id of electionIds) {
-                try {
-                    const election = await contract!.getElection(id);
-                    list.push({ ...election, id });
-                } catch (e) {
-                    console.error('Failed to fetch election:', id, e);
-                }
-            }
-            
-            setElections(list);
-        } catch (e) { 
-            console.error('Failed to fetch election IDs:', e);
-            setElections([]);
-        }
+            const e0 = await contract!.getElection(0).catch(() => null);
+            if (e0 && e0.name) list.push({ ...e0, id: 0 });
+            const e1 = await contract!.getElection(1).catch(() => null);
+            if (e1 && e1.name) list.push({ ...e1, id: 1 });
+        } catch (e) { console.error(e); }
+        setElections(list);
     };
 
     const createElection = async () => {
         if (!newElectionName) return;
         setLoading(true);
         try {
-            const now = Math.floor(Date.now() / 1000);
-            const electionId = `election_${now}`;
-            const startTime = now + 300; // Start in 5 minutes
-            const endTime = now + 86400; // End in 24 hours
-            const merkleRoot = "0x0000000000000000000000000000000000000000000000000000000000000000";
-            const manifestCid = "QmDefaultManifest";
-            
-            const tx = await contract!.createElection(
-                electionId,
-                newElectionName,
-                startTime,
-                endTime,
-                merkleRoot,
-                manifestCid
-            );
+            const tx = await contract!.createElection(newElectionName);
             await tx.wait();
             showToast('Election created successfully', 'success');
             fetchElections();
@@ -100,7 +77,7 @@ const AdminDashboardPage: React.FC = () => {
     const toggleElection = async (id: number) => {
         setLoading(true);
         try {
-            const tx = await contract!.toggleElectionActive(String(id));
+            const tx = await contract!.toggleElectionActive(id);
             await tx.wait();
             showToast('Election status updated', 'success');
             fetchElections();
@@ -127,7 +104,7 @@ const AdminDashboardPage: React.FC = () => {
             const cid = ipfsRes.ipfsHash;
 
             // Add to contract
-            const tx = await contract!.addCandidate(String(targetElectionId), String(Date.now()), newCandidateName, cid);
+            const tx = await contract!.addCandidate(targetElectionId, newCandidateName, newCandidateParty, cid);
             await tx.wait();
             showToast('Candidate added successfully', 'success');
             setNewCandidateName('');
@@ -217,17 +194,13 @@ const AdminDashboardPage: React.FC = () => {
                         </h3>
 
                         <div style={{ marginBottom: '1rem' }}>
-                            <label>Select Election</label>
-                            <select
+                            <label>Select Election ID</label>
+                            <input
+                                type="number"
                                 value={targetElectionId}
-                                onChange={e => setTargetElectionId(e.target.value)}
+                                onChange={e => setTargetElectionId(Number(e.target.value))}
                                 style={{ width: '100%', padding: '10px', marginTop: '0.5rem', borderRadius: theme.borderRadius.md, border: `1px solid ${theme.colors.gray300}` }}
-                            >
-                                <option value="">Select an election...</option>
-                                {elections.map(e => (
-                                    <option key={e.id} value={e.id}>{e.name} (ID: {e.id})</option>
-                                ))}
-                            </select>
+                            />
                         </div>
 
                         <input

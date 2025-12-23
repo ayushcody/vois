@@ -26,6 +26,7 @@ pids
 
 # Coverage directory used by tools like istanbul
 coverage/
+coverage.json
 
 # IDE files
 .vscode/
@@ -47,6 +48,15 @@ circuits/build/
 
 # Backend data files
 backend/data/
+backend/dist/
+backend/node_modules/
+backend/.env
+
+# Frontend
+frontend/dist/
+frontend/node_modules/
+frontend/.env
+frontend/.DS_Store
 
 # Hardhat files
 .openzeppelin/

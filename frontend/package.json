@@ -8,10 +8,12 @@
         "preview": "vite preview"
     },
     "dependencies": {
+        "ai": "^3.4.0",
         "ethers": "^6.9.0",
         "lucide-react": "^0.560.0",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
+        "react-markdown": "^9.0.1",
         "react-router-dom": "^7.10.1",
         "recharts": "^3.5.1"
     },

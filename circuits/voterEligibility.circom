@@ -1,30 +1,7 @@
 pragma circom 2.0.0;
 
-template Poseidon(nInputs) {
-    signal input inputs[nInputs];
-    signal output out;
-    
-    // Simplified mock Poseidon for development
-    var sum = 0;
-    for (var i = 0; i < nInputs; i++) {
-        sum += inputs[i];
-    }
-    out <== sum;
-}
-
-template MerkleTreeChecker(levels) {
-    signal input leaf;
-    signal input root;
-    signal input pathElements[levels];
-    signal input pathIndices[levels];
-    
-    // Simplified mock Merkle verification for development
-    component hasher = Poseidon(2);
-    hasher.inputs[0] <== leaf;
-    hasher.inputs[1] <== pathElements[0];
-    
-    root === hasher.out;
-}
+include "../node_modules/circomlib/circuits/poseidon.circom";
+include "../node_modules/circomlib/circuits/merkleTree.circom";
 
 template VoterEligibility(levels) {
     // Private Inputs
@@ -34,9 +11,9 @@ template VoterEligibility(levels) {
     signal input pathIndices[levels];
 
     // Public Inputs
-    signal input merkleRoot;
-    signal input electionId;
-    signal input nullifierHash;
+    signal input merkleRoot; // The root of the eligibility tree
+    signal input electionId; // Included in nullifier hash to bind vote to election
+    signal input nullifierHash; // The unique identifier for this vote preventing double voting
 
     // 1. Verify that commitment is in the Merkle Tree
     component tree = MerkleTreeChecker(levels);
@@ -48,6 +25,8 @@ template VoterEligibility(levels) {
     }
 
     // 2. Compute Nullifier Hash
+    // We want nullifierHash = Poseidon(nullifier, electionId)
+    // This ensures that the same nullifier produces different hashes for different elections
     component hasher = Poseidon(2);
     hasher.inputs[0] <== nullifier;
     hasher.inputs[1] <== electionId;
@@ -56,4 +35,5 @@ template VoterEligibility(levels) {
     hasher.out === nullifierHash;
 }
 
+// Instantiate with depth 20 for standard usage
 component main {public [merkleRoot, electionId, nullifierHash]} = VoterEligibility(20);

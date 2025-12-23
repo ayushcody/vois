@@ -17,10 +17,10 @@ const generateProofSchema = z.object({
     })
 });
 
-router.post("/generate", 
+router.post("/generate",
     authenticate,
     requirePermission('cast_vote'),
-    validate(generateProofSchema), 
+    validate(generateProofSchema),
     async (req, res, next) => {
         try {
             const input: VoterProofInput = req.body;

@@ -31,6 +31,8 @@ const createUserSchema = z.object({
 router.post('/verify-id', validate(verifyIdSchema), async (req, res, next) => {
     try {
         const { idNumber, otp } = req.body;
+        // Validation handled by middleware
+
         const isValid = await verifyId(idNumber, otp);
         if (isValid) {
             res.json({ success: true, message: "ID verified successfully" });

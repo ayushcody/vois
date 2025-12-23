@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navbar } from './common/Navbar';
 import { theme } from '../styles/theme';
+import { EkSaathiChat } from './common/EkSaathiChat';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return (
@@ -23,6 +24,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             >
                 © 2024 EkMat. EkMat Voting Platform. All actions are logged and auditable.
             </footer>
+            <EkSaathiChat />
         </div>
     );
 };
