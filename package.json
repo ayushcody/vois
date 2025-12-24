@@ -13,7 +13,7 @@
         "dev:frontend": "npm run dev --workspace=frontend",
         "dev:backend": "npm run dev --workspace=backend",
         "test": "hardhat test",
-        "chain": "ganache --wallet.seed \"ekmat-dev-seed\" --chain.chainId 1337 --server.port 8545 --miner.blockTime 1",
+        "chain": "ganache --wallet.mnemonic \"test test test test test test test test test test test junk\" --chain.chainId 1337 --server.port 8545 --miner.blockTime 1",
         "deploy:ganache": "hardhat run scripts/deploy/deploy.ts --network localhost",
         "setup:circuits": "node scripts/utils/setup-circuits.js",
         "build": "npm run build --workspaces",

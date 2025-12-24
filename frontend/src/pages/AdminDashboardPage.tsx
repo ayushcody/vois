@@ -60,15 +60,49 @@ const AdminDashboardPage: React.FC = () => {
 
     const createElection = async () => {
         if (!newElectionName) return;
+        console.log('Creating election:', newElectionName);
+        console.log('Contract:', contract);
         setLoading(true);
         try {
-            const tx = await contract!.createElection(newElectionName);
+            // Generate election ID from name
+            const electionId = newElectionName.toLowerCase().replace(/\s+/g, '-');
+
+            // Set election times (start now, end in 7 days)
+            const startTime = Math.floor(Date.now() / 1000);
+            const endTime = startTime + (7 * 24 * 60 * 60); // 7 days from now
+
+            // Use zero merkle root for now (will be set later when adding voters)
+            const merkleRoot = '0x0000000000000000000000000000000000000000000000000000000000000000';
+
+            // Empty manifest CID for now
+            const manifestCid = '';
+
+            console.log('Calling contract.createElection with params:', {
+                electionId,
+                name: newElectionName,
+                startTime,
+                endTime,
+                merkleRoot,
+                manifestCid
+            });
+
+            const tx = await contract!.createElection(
+                electionId,
+                newElectionName,
+                startTime,
+                endTime,
+                merkleRoot,
+                manifestCid
+            );
+            console.log('Transaction created:', tx);
             await tx.wait();
+            console.log('Transaction confirmed');
             showToast('Election created successfully', 'success');
             fetchElections();
             setNewElectionName('');
         } catch (err: any) {
-            showToast(err.reason || 'Failed to create election', 'error');
+            console.error('Error creating election:', err);
+            showToast(err.reason || err.message || 'Failed to create election', 'error');
         } finally {
             setLoading(false);
         }

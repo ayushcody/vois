@@ -109,9 +109,33 @@ export const Navbar: React.FC = () => {
           >
             Network: Testnet
           </span>
-          <Button onClick={handleConnect} variant={account ? 'secondary' : 'primary'} size="sm">
-            {account ? `${account.substring(0, 6)}...${account.substring(38)}` : 'Connect Wallet'}
-          </Button>
+          {account ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span
+                style={{
+                  fontSize: '0.85rem',
+                  padding: '0.4rem 0.75rem',
+                  borderRadius: '999px',
+                  backgroundColor: theme.colors.gray100,
+                  color: theme.colors.textPrimary,
+                  fontWeight: 500,
+                }}
+              >
+                {`${account.substring(0, 6)}...${account.substring(38)}`}
+              </span>
+              <Button
+                onClick={() => window.location.reload()}
+                variant="outline"
+                size="sm"
+              >
+                Disconnect
+              </Button>
+            </div>
+          ) : (
+            <Button onClick={handleConnect} variant="primary" size="sm">
+              Connect Wallet
+            </Button>
+          )}
         </div>
       </div>
     </nav>

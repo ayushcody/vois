@@ -31,17 +31,6 @@ export const HeroSection = ({ onGetStarted }: HeroSectionProps) => (
                 >
                     Get Started
                 </Button>
-                <Button
-                    size="lg"
-                    variant="outline"
-                    style={{
-                        borderColor: theme.colors.gray200,
-                        backgroundColor: 'rgba(255,255,255,0.85)',
-                        color: theme.colors.textMuted,
-                    }}
-                >
-                    View Demo Election
-                </Button>
             </div>
         </div>
     </section>

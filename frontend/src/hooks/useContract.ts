@@ -3,7 +3,7 @@ import { ethers } from 'ethers';
 import { useProvider } from './useProvider';
 
 export const useContract = (address: string, abi: any, signerOrProvider?: any) => {
-    const { provider } = useProvider();
+    const { provider, account } = useProvider();
     const [contract, setContract] = useState<ethers.Contract | null>(null);
 
     useEffect(() => {
@@ -14,20 +14,29 @@ export const useContract = (address: string, abi: any, signerOrProvider?: any) =
 
             if (!effectiveSignerOrProvider && provider) {
                 try {
-                    effectiveSignerOrProvider = await provider.getSigner();
+                    // If account is connected, get signer for transactions
+                    if (account) {
+                        effectiveSignerOrProvider = await provider.getSigner();
+                    } else {
+                        // Otherwise use provider for read-only
+                        effectiveSignerOrProvider = provider;
+                    }
                 } catch (e) {
-                    // Fallback to provider if signer fails (e.g. not connected)
+                    console.error("Failed to get signer:", e);
+                    // Fallback to provider if signer fails
                     effectiveSignerOrProvider = provider;
                 }
             }
 
             if (effectiveSignerOrProvider) {
-                setContract(new ethers.Contract(address, abi, effectiveSignerOrProvider));
+                const newContract = new ethers.Contract(address, abi, effectiveSignerOrProvider);
+                setContract(newContract);
+                console.log("Contract initialized:", address, "with signer:", !!account);
             }
         };
 
         initContract();
-    }, [address, abi, signerOrProvider, provider]);
+    }, [address, abi, signerOrProvider, provider, account]); // Added account dependency
 
     return contract;
 };
