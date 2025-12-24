@@ -23,7 +23,11 @@ app.use(helmet({
 }));
 app.use(morgan("combined", { stream: { write: (message) => logger.info(message.trim()) } }));
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:3000'],
+    origin: [
+        'http://localhost:5173',
+        'http://localhost:3000',
+        /\.vercel\.app$/  // Allow all Vercel URLs
+    ],
     credentials: true,
 }));
 app.use(express.json());
