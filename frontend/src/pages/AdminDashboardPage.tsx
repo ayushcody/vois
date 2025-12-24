@@ -25,10 +25,15 @@ const AdminDashboardPage: React.FC = () => {
 
     // Forms
     const [newElectionName, setNewElectionName] = useState('');
-    const [targetElectionId, setTargetElectionId] = useState(0);
+    const [targetElectionId, setTargetElectionId] = useState('');
     const [newCandidateName, setNewCandidateName] = useState('');
     const [newCandidateParty, setNewCandidateParty] = useState('');
     const [newCandidateImage, setNewCandidateImage] = useState<File | null>(null);
+
+    // Candidates listing
+    const [viewElectionId, setViewElectionId] = useState('');
+    const [candidates, setCandidates] = useState<any[]>([]);
+    const [loadingCandidates, setLoadingCandidates] = useState(false);
 
     useEffect(() => {
         if (contract) {
@@ -47,15 +52,49 @@ const AdminDashboardPage: React.FC = () => {
     }, []);
 
     const fetchElections = async () => {
-        // In a real dApp we'd iterate counters. For now fetch ID 0 and 1
-        const list = [];
         try {
-            const e0 = await contract!.getElection(0).catch(() => null);
-            if (e0 && e0.name) list.push({ ...e0, id: 0 });
-            const e1 = await contract!.getElection(1).catch(() => null);
-            if (e1 && e1.name) list.push({ ...e1, id: 1 });
-        } catch (e) { console.error(e); }
-        setElections(list);
+            // Get all election IDs from the contract
+            const rawIds: any = await contract!.getElectionIds();
+            const electionIds = Array.from(rawIds); // Convert Proxy/Result to array
+            console.log('Election IDs:', electionIds);
+
+            // Fetch each election by its string ID
+            const list = [];
+            for (const id of electionIds) {
+                try {
+                    const election = await contract!.getElection(id);
+                    console.log(`Election ${id} raw data:`, {
+                        id: election.id,
+                        name: election.name,
+                        active: election.active,
+                        startTime: election.startTime,
+                        endTime: election.endTime,
+                        exists: election.exists
+                    });
+
+                    // Explicitly map fields to ensure they're preserved
+                    const mappedElection = {
+                        id: id, // Use the ID from the loop, not from election object
+                        name: election.name,
+                        active: Boolean(election.active), // Explicitly convert to boolean
+                        startTime: Number(election.startTime),
+                        endTime: Number(election.endTime),
+                        merkleRoot: election.merkleRoot,
+                        manifestCid: election.manifestCid,
+                        exists: Boolean(election.exists)
+                    };
+                    console.log(`Election ${id} mapped:`, mappedElection);
+                    list.push(mappedElection);
+                } catch (e) {
+                    console.error(`Failed to fetch election ${id}:`, e);
+                }
+            }
+
+            console.log('Fetched elections (final):', list);
+            setElections(list);
+        } catch (e) {
+            console.error('Failed to fetch elections:', e);
+        }
     };
 
     const createElection = async () => {
@@ -108,23 +147,73 @@ const AdminDashboardPage: React.FC = () => {
         }
     };
 
-    const toggleElection = async (id: number) => {
+    const toggleElection = async (electionId: string, currentActive: boolean) => {
+        console.log('Toggle clicked for election:', electionId, 'Current active:', currentActive, 'Will set to:', !currentActive);
+
+        // Check if current wallet is admin
+        try {
+            const isAdmin = await contract!.isAdmin(account);
+            console.log('Is current wallet admin?', isAdmin, 'Wallet:', account);
+            if (!isAdmin) {
+                showToast('❌ Only admin wallet can toggle elections. Please switch to the deployment wallet (0xAb504218...)', 'error');
+                return;
+            }
+        } catch (err) {
+            console.error('Error checking admin status:', err);
+        }
+
         setLoading(true);
         try {
-            const tx = await contract!.toggleElectionActive(id);
+            // Toggle the active state
+            console.log('Calling contract.toggleElectionActive...');
+            const tx = await contract!.toggleElectionActive(electionId, !currentActive);
+            console.log('Transaction sent:', tx.hash);
             await tx.wait();
+            console.log('Transaction confirmed!');
             showToast('Election status updated', 'success');
-            fetchElections();
+            console.log('Fetching elections to refresh...');
+            await fetchElections();
+            console.log('Elections refreshed');
         } catch (err: any) {
-            showToast(err.reason || 'Failed to toggle election', 'error');
+            console.error('Error toggling election:', err);
+            showToast(err.reason || err.message || 'Failed to toggle election', 'error');
         } finally {
             setLoading(false);
         }
     };
 
+    const fetchCandidates = async (electionId: string) => {
+        if (!electionId) {
+            setCandidates([]);
+            return;
+        }
+        setLoadingCandidates(true);
+        try {
+            console.log('Fetching candidates for election:', electionId);
+            const cands = await contract!.getCandidates(electionId);
+            console.log('Raw candidates:', cands);
+            const formatted = cands.map((c: any, index: number) => ({
+                id: c.id || c.candidateId || index,
+                name: c.name,
+                party: c.party,
+                ipfsCid: c.ipfsCid,
+                voteCount: Number(c.voteCount)
+            }));
+            console.log('Formatted candidates:', formatted);
+            setCandidates(formatted);
+        } catch (err: any) {
+            console.error('Error fetching candidates:', err);
+            showToast(err.message || 'Failed to fetch candidates', 'error');
+            setCandidates([]);
+        } finally {
+            setLoadingCandidates(false);
+        }
+    };
+
+
     const addCandidate = async () => {
-        if (!newCandidateName || !newCandidateParty || !newCandidateImage) {
-            showToast('Please fill all fields', 'error');
+        if (!targetElectionId || !newCandidateName || !newCandidateParty || !newCandidateImage) {
+            showToast('Please fill all fields including election ID', 'error');
             return;
         }
         setLoading(true);
@@ -137,14 +226,20 @@ const AdminDashboardPage: React.FC = () => {
             if (!ipfsRes.success) throw new Error('IPFS Upload failed');
             const cid = ipfsRes.ipfsHash;
 
-            // Add to contract
-            const tx = await contract!.addCandidate(targetElectionId, newCandidateName, newCandidateParty, cid);
+            // Generate candidate ID from name
+            const candidateId = newCandidateName.toLowerCase().replace(/\s+/g, '-');
+
+            // Add to contract: addCandidate(electionId, candidateId, name, ipfsCid)
+            console.log('Adding candidate:', { targetElectionId, candidateId, newCandidateName, cid });
+            const tx = await contract!.addCandidate(targetElectionId, candidateId, newCandidateName, cid);
             await tx.wait();
             showToast('Candidate added successfully', 'success');
             setNewCandidateName('');
             setNewCandidateParty('');
             setNewCandidateImage(null);
+            setTargetElectionId('');
         } catch (err: any) {
+            console.error('Error adding candidate:', err);
             showToast(err.reason || err.message || 'Failed to add candidate', 'error');
         } finally {
             setLoading(false);
@@ -207,12 +302,12 @@ const AdminDashboardPage: React.FC = () => {
                                 <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderBottom: `1px solid ${theme.colors.gray200}` }}>
                                     <div>
                                         <strong>ID {e.id}: {e.name}</strong>
-                                        <div style={{ fontSize: '0.8rem', color: e.isActive ? theme.colors.success : theme.colors.textSecondary }}>
-                                            {e.isActive ? 'Active' : 'Inactive'}
+                                        <div style={{ fontSize: '0.8rem', color: e.active ? theme.colors.success : theme.colors.textSecondary }}>
+                                            {e.active ? 'Active' : 'Inactive'}
                                         </div>
                                     </div>
-                                    <Button size="sm" variant="outline" onClick={() => toggleElection(e.id)} disabled={loading}>
-                                        {e.isActive ? <ToggleRight color={theme.colors.success} /> : <ToggleLeft />}
+                                    <Button size="sm" variant="outline" onClick={() => toggleElection(e.id, e.active)} disabled={loading}>
+                                        {e.active ? <ToggleRight color={theme.colors.success} /> : <ToggleLeft />}
                                     </Button>
                                 </div>
                             ))}
@@ -230,9 +325,10 @@ const AdminDashboardPage: React.FC = () => {
                         <div style={{ marginBottom: '1rem' }}>
                             <label>Select Election ID</label>
                             <input
-                                type="number"
+                                type="text"
+                                placeholder="Enter election ID (e.g., '34')"
                                 value={targetElectionId}
-                                onChange={e => setTargetElectionId(Number(e.target.value))}
+                                onChange={e => setTargetElectionId(e.target.value)}
                                 style={{ width: '100%', padding: '10px', marginTop: '0.5rem', borderRadius: theme.borderRadius.md, border: `1px solid ${theme.colors.gray300}` }}
                             />
                         </div>
@@ -268,6 +364,71 @@ const AdminDashboardPage: React.FC = () => {
                         <Button onClick={addCandidate} disabled={loading} fullWidth>
                             {loading ? 'Adding...' : 'Add Candidate'}
                         </Button>
+
+                        {/* View Existing Candidates Section */}
+                        <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: `2px solid ${theme.colors.gray200}` }}>
+                            <h3 style={{ marginBottom: '1.5rem' }}>View Existing Candidates</h3>
+
+                            <div style={{ marginBottom: '1rem' }}>
+                                <label>Enter Election ID to View Candidates</label>
+                                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                                    <input
+                                        type="text"
+                                        placeholder="Enter election ID (e.g., '34')"
+                                        value={viewElectionId}
+                                        onChange={e => setViewElectionId(e.target.value)}
+                                        style={{ flex: 1, padding: '10px', borderRadius: theme.borderRadius.md, border: `1px solid ${theme.colors.gray300}` }}
+                                    />
+                                    <Button onClick={() => fetchCandidates(viewElectionId)} disabled={loadingCandidates}>
+                                        {loadingCandidates ? 'Loading...' : 'Load'}
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {candidates.length > 0 && (
+                                <div style={{ marginTop: '1.5rem' }}>
+                                    <h4 style={{ marginBottom: '1rem', color: theme.colors.textSecondary }}>
+                                        Candidates for Election "{viewElectionId}" ({candidates.length})
+                                    </h4>
+                                    {candidates.map((candidate, index) => (
+                                        <div
+                                            key={index}
+                                            style={{
+                                                padding: '1rem',
+                                                marginBottom: '0.5rem',
+                                                border: `1px solid ${theme.colors.gray200}`,
+                                                borderRadius: theme.borderRadius.md,
+                                                background: theme.colors.gray50
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                                                <div>
+                                                    <strong style={{ fontSize: '1.1rem' }}>{candidate.name}</strong>
+                                                    <div style={{ color: theme.colors.textSecondary, fontSize: '0.9rem', marginTop: '0.25rem' }}>
+                                                        {candidate.party}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.85rem', color: theme.colors.gray500, marginTop: '0.5rem' }}>
+                                                        ID: {candidate.id}
+                                                    </div>
+                                                </div>
+                                                <div style={{ textAlign: 'right' }}>
+                                                    <div style={{ fontSize: '0.85rem', color: theme.colors.gray500 }}>Votes</div>
+                                                    <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: theme.colors.primary }}>
+                                                        {candidate.voteCount}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {candidates.length === 0 && viewElectionId && !loadingCandidates && (
+                                <p style={{ textAlign: 'center', color: theme.colors.textSecondary, marginTop: '1rem' }}>
+                                    No candidates found for this election.
+                                </p>
+                            )}
+                        </div>
                     </Card>
                 )}
 

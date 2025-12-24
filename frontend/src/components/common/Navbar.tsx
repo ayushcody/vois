@@ -18,6 +18,19 @@ export const Navbar: React.FC = () => {
     }
   };
 
+  const handleSwitch = async () => {
+    try {
+      // Request permissions to trigger account selection dialog
+      await window.ethereum.request({
+        method: 'wallet_requestPermissions',
+        params: [{ eth_accounts: {} }],
+      });
+    } catch (e) {
+      console.error(e);
+      alert('Failed to switch wallet');
+    }
+  };
+
   const navLinkStyle = {
     color: theme.colors.textPrimary,
     textDecoration: 'none',
@@ -123,6 +136,13 @@ export const Navbar: React.FC = () => {
               >
                 {`${account.substring(0, 6)}...${account.substring(38)}`}
               </span>
+              <Button
+                onClick={handleSwitch}
+                variant="outline"
+                size="sm"
+              >
+                Switch Wallet
+              </Button>
               <Button
                 onClick={() => window.location.reload()}
                 variant="outline"

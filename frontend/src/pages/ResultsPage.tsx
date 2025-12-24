@@ -12,7 +12,7 @@ const COLORS = [theme.colors.primary, theme.colors.secondary, theme.colors.accen
 const ResultsPage: React.FC = () => {
     const contract = useContract(EKMAT_VOTING_ADDRESS, EkMatVotingArtifact.abi);
     const [elections, setElections] = useState<any[]>([]);
-    const [selectedElectionId, setSelectedElectionId] = useState(0);
+    const [selectedElectionId, setSelectedElectionId] = useState<string | null>(null);
     const [chartData, setChartData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -21,27 +21,60 @@ const ResultsPage: React.FC = () => {
     }, [contract]);
 
     useEffect(() => {
-        if (contract) fetchResults(selectedElectionId);
+        if (contract && selectedElectionId) fetchResults(selectedElectionId);
     }, [contract, selectedElectionId]);
 
     const fetchElections = async () => {
-        // Only doing Election 0 for demo
-        const e = await contract!.getElection(0).catch(() => null);
-        if (e) setElections([{ ...e, id: 0 }]);
+        try {
+            console.log('[Results] Fetching elections...');
+            // Get all election IDs from the contract
+            const rawIds: any = await contract!.getElectionIds();
+            const electionIds = Array.from(rawIds);
+            console.log('[Results] Election IDs:', electionIds);
+
+            // Fetch each election by its string ID
+            const list = [];
+            for (const id of electionIds) {
+                try {
+                    const election = await contract!.getElection(id);
+                    list.push({
+                        id: id,
+                        name: election.name,
+                        active: Boolean(election.active),
+                        startTime: Number(election.startTime),
+                        endTime: Number(election.endTime)
+                    });
+                } catch (e) {
+                    console.error(`Failed to fetch election ${id}:`, e);
+                }
+            }
+
+            console.log('[Results] Fetched elections:', list);
+            setElections(list);
+            if (list.length > 0 && !selectedElectionId) {
+                setSelectedElectionId(list[0].id);
+            }
+        } catch (err) {
+            console.error('[Results] Error fetching elections:', err);
+        }
     };
 
-    const fetchResults = async (id: number) => {
+    const fetchResults = async (electionId: string) => {
         setLoading(true);
         try {
-            const cands = await contract!.getCandidates(id);
+            console.log('[Results] Fetching results for election:', electionId);
+            const cands = await contract!.getCandidates(electionId);
+            console.log('[Results] Candidates:', cands);
             const data = cands.map((c: any) => ({
                 name: c.name,
                 votes: Number(c.voteCount),
                 party: c.party
             }));
+            console.log('[Results] Chart data:', data);
             setChartData(data);
         } catch (err) {
-            console.error(err);
+            console.error('[Results] Error fetching results:', err);
+            setChartData([]);
         } finally {
             setLoading(false);
         }
@@ -65,11 +98,12 @@ const ResultsPage: React.FC = () => {
                         <p style={{ color: theme.colors.textSecondary, fontSize: '0.9rem', margin: 0 }}>Viewing real-time results from the ledger.</p>
                     </div>
                     <select
-                        value={selectedElectionId}
-                        onChange={e => setSelectedElectionId(Number(e.target.value))}
+                        value={selectedElectionId || ''}
+                        onChange={e => setSelectedElectionId(e.target.value)}
                         style={{ padding: '10px', borderRadius: theme.borderRadius.md, border: `1px solid ${theme.colors.gray300}`, minWidth: '200px' }}
                     >
-                        {elections.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+                        {elections.length === 0 && <option value="">No elections found</option>}
+                        {elections.map(e => <option key={e.id} value={e.id}>{e.name} ({e.active ? 'Active' : 'Inactive'})</option>)}
                     </select>
                 </Card>
             </div>
