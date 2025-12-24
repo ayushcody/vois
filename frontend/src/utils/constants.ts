@@ -1,1 +1,2 @@
-export const EKMAT_VOTING_ADDRESS = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
+// Sepolia Testnet - Deployed Contract Address
+export const EKMAT_VOTING_ADDRESS = "0x5373cE2BC4a97a61459e820Bb7092b3660a24B04";
