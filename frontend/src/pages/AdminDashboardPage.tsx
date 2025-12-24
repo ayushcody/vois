@@ -398,7 +398,7 @@ const AdminDashboardPage: React.FC = () => {
                                                 marginBottom: '0.5rem',
                                                 border: `1px solid ${theme.colors.gray200}`,
                                                 borderRadius: theme.borderRadius.md,
-                                                background: theme.colors.gray50
+                                                background: theme.colors.gray100
                                             }}
                                         >
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>

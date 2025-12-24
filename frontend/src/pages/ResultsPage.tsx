@@ -52,7 +52,7 @@ const ResultsPage: React.FC = () => {
             console.log('[Results] Fetched elections:', list);
             setElections(list);
             if (list.length > 0 && !selectedElectionId) {
-                setSelectedElectionId(list[0].id);
+                setSelectedElectionId(String(list[0].id));
             }
         } catch (err) {
             console.error('[Results] Error fetching elections:', err);

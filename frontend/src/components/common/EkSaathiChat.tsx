@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { MessageSquare } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import { theme } from '../../styles/theme';
+// import { theme } from '../../styles/theme';
 
 type LanguageCode = 'en' | 'hi' | 'mr';
 
@@ -80,7 +80,7 @@ export const EkSaathiChat: React.FC = () => {
             }
 
             const content = await response.text();
-            
+
             const assistantMessage: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
@@ -93,11 +93,11 @@ export const EkSaathiChat: React.FC = () => {
             const errorMessage: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: language === 'hi' 
+                content: language === 'hi'
                     ? 'क्षमा करें, एक त्रुटि हुई। कृपया पुनः प्रयास करें।'
                     : language === 'mr'
-                    ? 'माफ करा, एक त्रुटी आली. कृपया पुन्हा प्रयत्न करा.'
-                    : 'Sorry, an error occurred. Please try again.',
+                        ? 'माफ करा, एक त्रुटी आली. कृपया पुन्हा प्रयत्न करा.'
+                        : 'Sorry, an error occurred. Please try again.',
             };
             setMessages((prev) => [...prev, errorMessage]);
         } finally {
@@ -231,8 +231,8 @@ export const EkSaathiChat: React.FC = () => {
                                 language === 'hi'
                                     ? 'अपना प्रश्न लिखें…'
                                     : language === 'mr'
-                                    ? 'आपला प्रश्न लिहा…'
-                                    : 'Type your question…'
+                                        ? 'आपला प्रश्न लिहा…'
+                                        : 'Type your question…'
                             }
                             value={input}
                             onChange={handleInputChange}
@@ -247,8 +247,8 @@ export const EkSaathiChat: React.FC = () => {
                                 : (language === 'hi'
                                     ? 'भेजें'
                                     : language === 'mr'
-                                    ? 'पाठवा'
-                                    : 'Send')}
+                                        ? 'पाठवा'
+                                        : 'Send')}
                         </button>
                     </form>
 
@@ -266,8 +266,8 @@ export const EkSaathiChat: React.FC = () => {
                             {language === 'hi'
                                 ? 'ID सत्यापित कैसे करें?'
                                 : language === 'mr'
-                                ? 'ओळख कशी पडताळावी?'
-                                : 'How to verify ID?'}
+                                    ? 'ओळख कशी पडताळावी?'
+                                    : 'How to verify ID?'}
                         </button>
                         <button
                             type="button"
@@ -282,8 +282,8 @@ export const EkSaathiChat: React.FC = () => {
                             {language === 'hi'
                                 ? 'मेरा वोट अनामिक है?'
                                 : language === 'mr'
-                                ? 'माझे मत अनामिक आहे का?'
-                                : 'Is my vote anonymous?'}
+                                    ? 'माझे मत अनामिक आहे का?'
+                                    : 'Is my vote anonymous?'}
                         </button>
                         <button
                             type="button"
@@ -298,8 +298,8 @@ export const EkSaathiChat: React.FC = () => {
                             {language === 'hi'
                                 ? 'अपना वोट ट्रैक करें'
                                 : language === 'mr'
-                                ? 'मत ट्रॅक करा'
-                                : 'Track my vote'}
+                                    ? 'मत ट्रॅक करा'
+                                    : 'Track my vote'}
                         </button>
                     </div>
                 </div>
