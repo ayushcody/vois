@@ -192,7 +192,7 @@ const VotePage: React.FC = () => {
             console.log('[VotePage] Final elections list:', list);
             setElections(list);
             if (list.length > 0) {
-                setSelectedElectionId(list[0].id);
+                setSelectedElectionId(String(list[0].id));
             }
         } catch (err) {
             console.error(err);
