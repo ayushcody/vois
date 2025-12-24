@@ -474,7 +474,7 @@ const VotePage: React.FC = () => {
 
                                         <Button
                                             fullWidth
-                                            onClick={() => handleCastVote(candidate.id, candidate.name)}
+                                            onClick={() => handleCastVote(String(candidate.id), candidate.name)}
                                             disabled={voting || !account}
                                         >
                                             {voting ? 'Signing...' : (account ? `Confirm vote for ${candidate.name}` : 'Connect Wallet')}
