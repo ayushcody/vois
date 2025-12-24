@@ -167,12 +167,12 @@ const VotePage: React.FC = () => {
 
                     // Explicitly map fields to ensure they're preserved
                     const mappedElection = {
-                        id: id,
-                        name: election.name,
+                        id: String(id),
+                        name: String(election.name),
                         active: Boolean(election.active),
                         startTime: Number(election.startTime),
                         endTime: Number(election.endTime),
-                        merkleRoot: election.merkleRoot
+                        merkleRoot: String(election.merkleRoot)
                     };
 
                     console.log(`[VotePage] Election ${id} mapped:`, mappedElection);

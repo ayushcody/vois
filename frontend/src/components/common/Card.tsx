@@ -6,11 +6,13 @@ interface CardProps {
     header?: React.ReactNode;
     footer?: React.ReactNode;
     style?: React.CSSProperties;
+    className?: string;
 }
 
-export const Card: React.FC<CardProps> = ({ children, header, footer, style }) => {
+export const Card: React.FC<CardProps> = ({ children, header, footer, style, className }) => {
     return (
         <div
+            className={className}
             style={{
                 backgroundColor: theme.colors.white,
                 borderRadius: theme.borderRadius.lg,

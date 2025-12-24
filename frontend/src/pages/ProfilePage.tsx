@@ -8,7 +8,7 @@ import { theme } from '../styles/theme';
 import { Wallet, User, LogOut, Copy } from 'lucide-react';
 
 const ProfilePage: React.FC = () => {
-    const { account, connect, disconnect } = useProvider();
+    const { account, provider } = useProvider();
     const { showToast } = useToast();
 
     const shortAddr = (addr: string) => addr?.substring(0, 6) + '...' + addr?.substring(addr.length - 4);
@@ -22,16 +22,19 @@ const ProfilePage: React.FC = () => {
 
     const handleConnect = async () => {
         try {
-            await connect();
-            showToast('Wallet connected successfully', 'success');
+            if (window.ethereum) {
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                showToast('Wallet connected successfully', 'success');
+            } else {
+                showToast('Please install MetaMask', 'error');
+            }
         } catch (error) {
             showToast('Failed to connect wallet', 'error');
         }
     };
 
     const handleDisconnect = () => {
-        disconnect();
-        showToast('Wallet disconnected', 'info');
+        showToast('Please disconnect from MetaMask extension', 'info');
     };
 
     return (
@@ -52,24 +55,24 @@ const ProfilePage: React.FC = () => {
 
                     {account ? (
                         <div>
-                            <div style={{ 
-                                background: theme.colors.gray100, 
-                                padding: '1.5rem', 
-                                borderRadius: theme.borderRadius.md, 
-                                marginBottom: '2rem' 
+                            <div style={{
+                                background: theme.colors.gray100,
+                                padding: '1.5rem',
+                                borderRadius: theme.borderRadius.md,
+                                marginBottom: '2rem'
                             }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
                                     <Wallet size={20} color={theme.colors.success} />
                                     <span style={{ color: theme.colors.success, fontWeight: 'bold' }}>Connected</span>
                                 </div>
-                                
+
                                 <div style={{ marginBottom: '1rem' }}>
                                     <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
                                         Wallet Address:
                                     </label>
-                                    <div style={{ 
-                                        display: 'flex', 
-                                        alignItems: 'center', 
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
                                         gap: '1rem',
                                         background: 'white',
                                         padding: '0.75rem',
@@ -79,9 +82,9 @@ const ProfilePage: React.FC = () => {
                                         <span style={{ fontFamily: 'monospace', flex: 1 }}>
                                             {account}
                                         </span>
-                                        <Button 
-                                            size="sm" 
-                                            variant="outline" 
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
                                             onClick={copyAddress}
                                             style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                                         >
@@ -95,8 +98,8 @@ const ProfilePage: React.FC = () => {
                                     <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
                                         Short Address:
                                     </label>
-                                    <span style={{ 
-                                        fontFamily: 'monospace', 
+                                    <span style={{
+                                        fontFamily: 'monospace',
                                         background: 'white',
                                         padding: '0.75rem',
                                         borderRadius: theme.borderRadius.sm,
@@ -108,14 +111,14 @@ const ProfilePage: React.FC = () => {
                                 </div>
                             </div>
 
-                            <Button 
+                            <Button
                                 onClick={handleDisconnect}
                                 variant="outline"
                                 fullWidth
-                                style={{ 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    justifyContent: 'center', 
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
                                     gap: '0.5rem',
                                     color: theme.colors.error,
                                     borderColor: theme.colors.error
@@ -127,14 +130,14 @@ const ProfilePage: React.FC = () => {
                         </div>
                     ) : (
                         <div style={{ textAlign: 'center' }}>
-                            <div style={{ 
-                                background: theme.colors.gray100, 
-                                padding: '3rem 2rem', 
-                                borderRadius: theme.borderRadius.md, 
-                                marginBottom: '2rem' 
+                            <div style={{
+                                background: theme.colors.gray100,
+                                padding: '3rem 2rem',
+                                borderRadius: theme.borderRadius.md,
+                                marginBottom: '2rem'
                             }}>
                                 <Wallet size={48} color={theme.colors.gray400} style={{ marginBottom: '1rem' }} />
-                                <h3 style={{ color: theme.colors.gray600, marginBottom: '0.5rem' }}>
+                                <h3 style={{ color: theme.colors.gray500, marginBottom: '0.5rem' }}>
                                     No Wallet Connected
                                 </h3>
                                 <p style={{ color: theme.colors.textSecondary, margin: 0 }}>
@@ -142,14 +145,14 @@ const ProfilePage: React.FC = () => {
                                 </p>
                             </div>
 
-                            <Button 
+                            <Button
                                 onClick={handleConnect}
                                 fullWidth
-                                style={{ 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    justifyContent: 'center', 
-                                    gap: '0.5rem' 
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.5rem'
                                 }}
                             >
                                 <Wallet size={16} />
